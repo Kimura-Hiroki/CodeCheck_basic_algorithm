@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>コードチェック（基本的なアルゴリズムと配列）</title>
+<style>
+  :root{
+    --mint-1:#e6f6f1; --mint-2:#cfece4; --mint-3:#5fb9a9; --mint-4:#2f9e8f;
+    --aqua-1:#e4f2fb; --page:#f7f8fb; --panel:#ffffff; --ink:#1a1f2b; --muted:#5b6b7c; --line:#e5e7eb;
+    --warn:#f7b44a; --err:#ef5a5a; --shadow:0 10px 30px rgba(21,62,53,.06),0 2px 6px rgba(21,62,53,.05);
+    --font-size:14px; --row-h:24px; --pad-top:8px;
+  }
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(1200px 600px at 86% -12%,var(--aqua-1) 0%,transparent 60%),radial-gradient(900px 450px at -10% 8%,var(--mint-1) 0%,transparent 55%),linear-gradient(180deg,var(--page),#eef2f6);color:var(--ink);font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN","Yu Gothic","Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:1200px;margin:24px auto 32px;padding:0 16px}
+  .hero{margin:20px 0 14px}
+  .heroBand{background:linear-gradient(180deg,var(--mint-1),#dff2ec);border:2px solid var(--mint-2);border-radius:18px;padding:18px 18px 14px 18px;box-shadow:0 2px 0 #fff inset}
+  .title{display:block;font-weight:900;letter-spacing:.02em;font-size:clamp(24px,4.2vw,34px);color:#10211d;margin:4px 0 2px}
+  .controls{display:flex;flex-direction:column;align-items:center;gap:10px;margin:16px 0 18px}
+  .rowControls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  select,.btn{font:inherit;color:var(--ink);background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;box-shadow:0 1px 0 #fff inset}
+  .btn{cursor:pointer;transition:.18s transform ease,.18s box-shadow ease}
+  .btn.primary{background:var(--mint-3);color:#fff;border-color:transparent;box-shadow:0 6px 14px rgba(47,158,143,.22)}
+  .btn.primary:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(47,158,143,.28);background:var(--mint-4)}
+  .sliderWrap{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;opacity:.9}
+  .sliderWrap input[type=range]{width:200px;accent-color:#8dbab1}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+  .head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);color:#115a52;background:#fff;font-weight:700}
+  .editor{display:grid;grid-template-columns:72px 1fr;background:#fff;overflow:hidden}
+  .gutter{background:#fff;border-right:1px solid var(--line);overflow:hidden;scrollbar-width:thin;padding-top:var(--pad-top)}
+  .n{height:var(--row-h);line-height:var(--row-h);padding:0 10px;font-size:12px;display:flex;align-items:center;gap:8px}
+  .flag{width:6px;height:70%;border-radius:3px;background:#cfe5df}
+  .index{display:flex;align-items:center;gap:2px;margin-left:2px}
+  .lnum{width:26px;text-align:right;color:#98b6ae;font-variant-numeric:tabular-nums}
+  .mark{min-width:14px;text-align:left;font-weight:800}
+  .mark.ok{color:#27b365}.mark.warn{color:#9b6b09}.mark.err{color:#ef4444}
+  textarea#student{background:#fff;color:var(--ink);font:var(--font-size)/var(--row-h) ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;padding:var(--pad-top) 12px 8px;border:0;outline:none;resize:none;tab-size:4;caret-color:var(--mint-4);white-space:pre;overflow-x:auto;overflow-y:hidden}
+  textarea#student::selection{background:#d8f4eb}
+  .refCanvasWrap{overflow:hidden;background:#fff}
+  canvas#ref{display:block}
+  .list{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);display:none}
+  .list .head{border-bottom:1px solid var(--line);background:#fff}
+  .list .row{display:flex;gap:10px;padding:10px 14px;border-top:1px solid var(--line);align-items:flex-start;background:#fff}
+  .list .row:first-child{border-top:none}
+  .k{font-size:11px;color:#0a6b61;padding:2px 8px;border:1.5px solid var(--mint-2);border-radius:999px;background:#e8faf6}
+  .msg{color:var(--ink);font-size:13px}
+  .msg small{color:#607b73}
+  .row.err .k{border-color:#fecaca;color:#b91c1c;background:#fff1f2}
+  .row.warn .k{border-color:#fde68a;color:#b45309;background:#fffbeb}
+  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero" aria-label="見出し">
+    <div class="heroBand"><strong class="title">コードチェック（基本的なアルゴリズムと配列）</strong></div>
+  </header>
+  <div class="controls" aria-label="操作">
+    <div class="rowControls"><label for="lessonSel">課題：</label><select id="lessonSel"></select></div>
+    <div class="rowControls"><div class="sliderWrap" title="フォントサイズ"><span>Aa</span><input id="fontRange" type="range" min="12" max="20" step="1" value="14" /></div></div>
+  </div>
+  <div class="grid">
+    <section class="card" aria-label="あなたのコード">
+      <div class="head"><div>あなたのコード</div></div>
+      <div id="editor" class="editor">
+        <div id="gutter" class="gutter" aria-hidden="true"></div>
+        <textarea id="student" wrap="off" spellcheck="false" placeholder="ここに入力またはコピーペーストしてください"></textarea>
+      </div>
+      <div class="rowControls" style="justify-content:center;padding:12px"><button id="checkBtn" class="btn primary">コードチェック</button></div>
+    </section>
+    <section class="card" aria-label="教科書のコード">
+      <div class="head"><div>教科書のコード</div></div>
+      <div id="refWrap" class="refCanvasWrap"><canvas id="ref" width="10" height="10"></canvas></div>
+    </section>
+  </div>
+  <section class="list" id="issueList" aria-label="エラー一覧">
+    <div class="head"><div>エラー一覧</div></div>
+    <div id="listBody"></div>
+  </section>
+</div>
+<script>
+const lessons=[
+  {id:'l1',title:'１．連続した数の総和を求めるアルゴリズム',code:`souwa = 0\nfor i in range(1, 11):\n    souwa = souwa + i\nprint(souwa)`},
+  {id:'l2',title:'２．配列と要素の総和を求めるアルゴリズム',code:`Data = [5, 7, 3, 5, 2, 2]\nprint(Data[3])`},
+  {id:'l3',title:'３．配列の要素の総和　やってみよう（１）（回答例）',code:`Data = [80, 65, 85, 75, 60, 90, 80, 85, 80, 70]\nsouwa = 0\nfor i in range(10):\n    souwa = souwa + Data[i]\nprint(souwa)`},
+  {id:'l4',title:'４．配列の要素の総和　やってみよう（２）（回答例）',code:`Data = [80, 65, 85, 75, 60, 90, 80, 85, 80, 70]\nsouwa = 0\nfor i in range(len(Data)):\n    souwa = souwa + Data[i]\nprint(souwa)`},
+  {id:'l5',title:'５．最大値・最小値を求めるアルゴリズム（配列の要素の最大値）',code:`Data = [11, 35, 32, 67, 74, 56, 83, 22]\nsaidai = Data[0]\nfor i in range(1, len(Data)):\n    if saidai < Data[i]:\n        saidai = Data[i]\nprint("最大値", saidai)`},
+  {id:'l6',title:'６．最大値・最小値を求めるアルゴリズム　やってみよう（解答例）',code:`Data = [11, 35, 32, 67, 74, 56, 83, 22]\nsaisyou = Data[0]\nfor i in range(1, len(Data)):\n    if saisyou > Data[i]:\n        saisyou = Data[i]\nprint("最小値", saisyou)`},
+  {id:'l7',title:'７．並べ替えのアルゴリズム（昇順）',code:`Data = [73, 35, 67, 26, 74, 11, 83, 22]\nfor i in range(0, len(Data) - 1):\n    for j in range(0, len(Data) - i - 1):\n        if Data[j] > Data[j + 1]:\n            Data[j], Data[j + 1] = Data[j + 1], Data[j]\nprint(Data)`}
+];
+const els={lessonSel:document.getElementById('lessonSel'),fontRange:document.getElementById('fontRange'),student:document.getElementById('student'),gutter:document.getElementById('gutter'),editor:document.getElementById('editor'),ref:document.getElementById('ref'),refWrap:document.getElementById('refWrap'),issueList:document.getElementById('issueList'),listBody:document.getElementById('listBody'),checkBtn:document.getElementById('checkBtn')};
+let REF_CODE=lessons[0].code,REF_LINES=[],lastRes=[],autoAfterFirst=false;
+const FULLWIDTH_MAP={'＝':'=','：':':','；':';','，':',','＂':'"','＋':'+','－':'-','＊':'*','／':'/','（':'(','）':')','｛':'{','｝':'}','［':'[','］':']','！':'!','。':'.','　':' '};
+const FW_REGEX=/[＝：；，＂＋－＊／（）｛｝［］！。　]/g;
+function scanFullwidth(line){const issues=[];let m;while((m=FW_REGEX.exec(line))!==null){const fw=m[0],hw=FULLWIDTH_MAP[fw]||'(?)';const idx=m.index; if(fw==='　'){issues.push({kind:'err',msg:'全角スペースが含まれています',fix:'半角スペースに置き換えてください',colStart:idx,colEnd:idx+1});}else{issues.push({kind:'err',msg:`全角の「${fw}」が使われています → 半角「${hw}」に直してください`,fix:`${fw} を ${hw} に変更`,colStart:idx,colEnd:idx+1});}}return issues;}
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function drawReferenceCanvas(){const padX=16,padY=16,lineH=parseInt(cssVar('--row-h'),10),fontPx=parseInt(cssVar('--font-size'),10),gutterW=72;const lines=REF_LINES,ctx=els.ref.getContext('2d');const widest=Math.max(...lines.map(s=>s.replace(/\t/g,'    ').length),20);const estWidth=Math.min(1200,Math.max(520,padX*2+gutterW+widest*fontPx*0.62));els.ref.width=estWidth;els.ref.height=padY*2+lineH*lines.length;ctx.fillStyle='#fff';ctx.fillRect(0,0,els.ref.width,els.ref.height);function xAt(lineStr, col){return gutterW+8+ctx.measureText(lineStr.slice(0,col).replace(/\t/g,'    ')).width;}for(let i=0;i<lines.length;i++){const y=padY+i*lineH;ctx.font=`400 ${fontPx}px ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace`;ctx.textBaseline='top';ctx.fillStyle='#98b6ae';ctx.fillText(String(i+1).padStart(2,' '),padX,y);ctx.fillStyle='#0f172a';ctx.fillText(lines[i].replace(/\t/g,'    '),gutterW+8,y);const row=lastRes.find(r=>r.line===i+1);if(row&&row.issues){for(const it of row.issues){if(it.refStart!=null&&it.refEnd!=null){const x1=xAt(lines[i],it.refStart),x2=xAt(lines[i],it.refEnd);ctx.fillStyle='rgba(239,68,68,.18)';ctx.fillRect(x1,y-1,Math.max(3,x2-x1),lineH+2);} }} }}
+['copy','cut','contextmenu'].forEach(t=>{els.refWrap.addEventListener(t,e=>{e.preventDefault();return false;});});
+const countIndent=s=>{let i=0,w=0;while(i<s.length){const ch=s[i];if(ch===' '){w++;i++;continue}if(ch==='\t'){w+=4-(w%4);i++;continue}if(ch==='\u3000'){w++;i++;continue}break}return w;};
+const endsWithColon=s=>s.trim().endsWith(':');
+function tokenizePy(line){const rx=/(#.*$)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)|([()\[\]{},:.*+\-\/%]=?|==|!=|<=|>=|<|>|=)|(\s+)/g;const out=[];let m;while((m=rx.exec(line))!==null){if(m[1])out.push({k:'comment',v:m[1]});else if(m[2])out.push({k:'str',v:m[2]});else if(m[3])out.push({k:'num',v:m[3]});else if(m[4])out.push({k:'id',v:m[4]});else if(m[5])out.push({k:'op',v:m[5]});else if(m[6])out.push({k:'ws',v:m[6]});}return out;}
+function stripWS(t){return t.filter(x=>x.k!=='ws'&&x.k!=='comment');}
+function firstDiff(a,b){const m=Math.min(a.length,b.length);for(let i=0;i<m;i++){if(a[i]!==b[i])return i}return m;}
+function scanZenkakuSpacesOutsideString(line){const tokens=tokenizePy(line);for(const t of tokens){if(t.k==='str'||t.k==='comment')continue;if((t.v||'').includes('\u3000')){const pos=(t.v||'').indexOf('\u3000');return[{kind:'err',msg:'全角スペースが含まれています',fix:'半角スペースに置き換えてください',colStart:pos,colEnd:pos+1}]} }return[]}
+function checkBrackets(line){const tokens=tokenizePy(line);const stack=[];const pairs={')':'(',']':'[','}':'{'};const openSet=new Set(['(','[','{']);const closeSet=new Set([')',']','}']);const issues=[];for(const tok of tokens){if(tok.k==='str'||tok.k==='comment')continue;const v=tok.v||'';for(let i=0;i<v.length;i++){const ch=v[i];if(openSet.has(ch)){stack.push({ch});}else if(closeSet.has(ch)){if(!stack.length||stack[stack.length-1].ch!==pairs[ch]){issues.push({kind:'err',msg:`対応する括弧が正しくありません: 「${ch}」`,fix:'括弧の対応を確認してください'});}else{stack.pop();}}}}if(stack.length){stack.forEach(s=>{issues.push({kind:'err',msg:`「${s.ch}」に対応する閉じ括弧がありません`,fix:'閉じ括弧を追加してください'})});}return issues}
+function normExpr(s){return s.replace(/\s+/g,'')}
+function findIndexAccess(line, type){let re; if(type==='[]'){re=/([A-Za-z_]\w*)\s*\[\s*([^\]]+)\s*\]/g;}else if(type==='()'){re=/([A-Za-z_]\w*)\s*\(\s*([^\)]+)\s*\)/g;}else{re=/([A-Za-z_]\w*)\s*\{\s*([^\}]+)\s*\}/g;}const out=[];let m;while((m=re.exec(line))!==null){const id=m[1],inner=m[2];const full=m[0];const openIdx=m.index+full.indexOf(full.match(/[\[\(\{]/)[0]);const closeIdx=m.index+full.lastIndexOf(full.match(/[\]\)\}]/)[0])+1;out.push({id,inner,openIdx,closeIdx});}return out}
+function detectIndexBracketMismatch(ref, got){const refIdx=findIndexAccess(ref,'[]').map(o=>({id:o.id,inner:normExpr(o.inner),open:o.openIdx,close:o.closeIdx}));if(!refIdx.length)return[];const par=findIndexAccess(got,'()');const cur=findIndexAccess(got,'{}');const issues=[];function tryMatch(cand,type){for(const c of cand){const match=refIdx.find(r=>r.id===c.id && normExpr(c.inner)===r.inner);if(match){issues.push({kind:'err',msg:`配列の添字には角括弧 [] を使います（${c.id}[...])`,fix:`${c.id}[${c.inner}] のように [] を使用`,colStart:c.openIdx,colEnd:c.closeIdx,refStart:match.open,refEnd:match.close});}}
+}
+tryMatch(par,'()'); tryMatch(cur,'{}'); return issues}
+function checkAll(){const stuRaw=els.student.value.replace(/\r\n/g,'\n');const sLines=stuRaw.split('\n');buildGutter(sLines.length);const res=[];for(let i=0;i<Math.max(REF_LINES.length,sLines.length);i++){const ref=(REF_LINES[i]??''),got=(sLines[i]??'');const issues=[];issues.push(...scanFullwidth(got));issues.push(...scanZenkakuSpacesOutsideString(got));issues.push(...checkBrackets(got));issues.push(...detectIndexBracketMismatch(ref,got));const indRef=countIndent(ref),indGot=countIndent(got);if(indRef!==indGot)issues.push({kind:'err',msg:`インデントが違います（教科書:${indRef} 実際:${indGot}）`,fix:'行頭のスペース数を合わせる。',refStart:0,refEnd:indRef,colStart:0,colEnd:indGot});if(endsWithColon(ref)&&!endsWithColon(got)){const pos=ref.lastIndexOf(':');issues.push({kind:'err',msg:'行末のコロン : がありません',fix:'例）if x == 0: のように : を付ける',refStart:pos,refEnd:pos+1});}const rt=stripWS(tokenizePy(ref)),gt=stripWS(tokenizePy(got));const len=Math.max(rt.length,gt.length);let tokenMismatch=false;for(let k=0;k<len;k++){const a=rt[k],b=gt[k];if(!a||!b){tokenMismatch=true;continue}if(a.k===b.k&&a.v===b.v)continue;tokenMismatch=true}if(tokenMismatch){const p=firstDiff(ref,got);issues.push({kind:'err',msg:`記述が異なります（${p+1}文字目付近）`,fix:'教科書の記述と照合してください。',refStart:Math.max(0,Math.min(p,ref.length-1)),refEnd:Math.min(ref.length,p+1)});}const level=issues.some(i=>i.kind==='err')?'err':(issues.length?'warn':'ok');res.push({line:i+1,level,issues})}lastRes=res;renderGutter(res);renderList(res);drawReferenceCanvas();els.issueList.style.display='block';resizeToContent()}
+function buildGutter(lineCount){const frag=document.createDocumentFragment();for(let i=0;i<lineCount;i++){const div=document.createElement('div');div.className='n';div.dataset.line=String(i+1);const flag=document.createElement('div');flag.className='flag';const index=document.createElement('div');index.className='index';const lnum=document.createElement('span');lnum.className='lnum';lnum.textContent=String(i+1);const mark=document.createElement('span');mark.className='mark';mark.textContent='';index.appendChild(lnum);index.appendChild(mark);div.appendChild(flag);div.appendChild(index);frag.appendChild(div)}els.gutter.innerHTML='';els.gutter.appendChild(frag)}
+function renderGutter(res){const kids=els.gutter.children;for(let i=0;i<kids.length;i++){const k=kids[i];k.classList.remove('ok','warn','err');const r=res[i];if(!r)continue;k.classList.add(r.level);const mark=k.querySelector('.mark');mark.classList.remove('ok','warn','err');if(r.level==='ok'){mark.textContent='〇';mark.classList.add('ok')}else if(r.level==='warn'){mark.textContent='△';mark.classList.add('warn')}else{mark.textContent='×';mark.classList.add('err')}}}
+function renderList(res){const frag=document.createDocumentFragment();let any=false;for(const r of res){if(!r.issues.length)continue;for(const it of r.issues){any=true;const div=document.createElement('div');div.className='row '+(it.kind==='err'?'err':(it.kind==='warn'?'warn':''));const k=document.createElement('div');k.className='k';k.textContent='L'+r.line;const m=document.createElement('div');m.className='msg';m.innerHTML=it.msg+(it.fix?` <small>— ${it.fix}</small>`:'');div.appendChild(k);div.appendChild(m);frag.appendChild(div)}}if(!any){const ok=document.createElement('div');ok.className='row';ok.innerHTML='<div class="k">OK</div><div class="msg">問題は見つかりませんでした。</div>';frag.appendChild(ok)}els.listBody.innerHTML='';els.listBody.appendChild(frag)}
+function cssNum(v){return parseInt(cssVar(v),10)}
+function resizeToContent(){const lineH=cssNum('--row-h');const padY=cssNum('--pad-top');const buffer=2;const refH=els.ref.height;const studentLines=(els.student.value.replace(/\r\n/g,'\n').split('\n').length)||0;const targetLines=Math.max(REF_LINES.length+buffer,studentLines);const targetH=lineH*targetLines+padY*2;const finalH=Math.max(targetH,refH);els.editor.style.height=finalH+"px";els.gutter.style.height=finalH+"px";els.student.style.height=finalH+"px";els.refWrap.style.height=finalH+"px"}
+function applyFont(px){const root=document.documentElement.style;root.setProperty('--font-size',px+'px');root.setProperty('--row-h',Math.round(px*1.7)+'px');const lines=(els.student.value.replace(/\r\n/g,'\n').split('\n').length)||REF_LINES.length;buildGutter(lines);drawReferenceCanvas();resizeToContent()}
+function setLesson(id){const L=lessons.find(x=>x.id===id)||lessons[0];REF_CODE=L.code.replace(/\r\n/g,'\n');REF_LINES=REF_CODE.split('\n');lastRes=[];drawReferenceCanvas();els.student.value='';els.issueList.style.display='none';buildGutter(REF_LINES.length);resizeToContent()}
+function init(){lessons.forEach(L=>{const o=document.createElement('option');o.value=L.id;o.textContent=L.title;els.lessonSel.appendChild(o)});els.lessonSel.addEventListener('change',e=>setLesson(e.target.value));els.student.addEventListener('scroll',()=>{els.gutter.scrollTop=els.student.scrollTop});els.student.addEventListener('input',()=>{resizeToContent()});els.checkBtn.addEventListener('click',()=>{checkAll();if(!autoAfterFirst){autoAfterFirst=true;els.student.addEventListener('input',checkAll)}});els.fontRange.addEventListener('input',e=>applyFont(parseInt(e.target.value,10)));applyFont(parseInt(els.fontRange.value,10));setLesson(lessons[0].id)}
+['copy','cut','contextmenu'].forEach(t=>{els.refWrap.addEventListener(t,e=>{e.preventDefault();return false})});
+window.addEventListener('load',init);
+</script>
+</body>
+</html>
